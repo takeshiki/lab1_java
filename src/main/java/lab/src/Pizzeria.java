@@ -3,7 +3,7 @@ package lab.src;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Pizzeria implements JsonSerializable {
+public class Pizzeria implements JsonSerializable<Pizzeria> {
     private ArrayList<Pizza> menu = new ArrayList<>();
     private HashMap<Integer, Customer> customers = new HashMap<>();
     private int totalSoldPizzas = 0;
@@ -30,6 +30,10 @@ public class Pizzeria implements JsonSerializable {
 
     public Customer getCustomer(int customerId) {
         return customers.get(customerId);
+    }
+
+    public HashMap<Integer, Customer> getCustomers() {
+        return customers;
     }
 
     public float processOrder(int customerId) {
@@ -135,36 +139,156 @@ public class Pizzeria implements JsonSerializable {
         Pizzeria pizzeria = new Pizzeria();
 
         try {
-            // Parse menu
-            String menuStr = json.split("\"menu\": \\[")[1].split("\\]")[0].trim();
-            String[] pizzaJsons = menuStr.split("},\\{");
-            for (String pizzaJson : pizzaJsons) {
-                if (!pizzaJson.startsWith("{")) pizzaJson = "{" + pizzaJson;
-                if (!pizzaJson.endsWith("}")) pizzaJson = pizzaJson + "}";
-                Pizza pizza =  new Pizza();
-                pizza.fromJson(pizzaJson);
-                pizzeria.addPizzaToMenu(pizza);
+            // Extract menu section
+            int menuStartIndex = json.indexOf("\"menu\": [");
+            if (menuStartIndex != -1) {
+                int menuContentStart = json.indexOf('[', menuStartIndex) + 1;
+                int menuContentEnd = findMatchingCloseBracket(json, menuContentStart - 1);
+
+                if (menuContentEnd != -1) {
+                    String menuContent = json.substring(menuContentStart, menuContentEnd).trim();
+
+                    // Process each pizza in the menu
+                    if (!menuContent.isEmpty()) {
+                        ArrayList<String> pizzaJsons = splitJsonObjects(menuContent);
+
+                        for (String pizzaJson : pizzaJsons) {
+                            try {
+                                Pizza pizza = new Pizza();
+                                pizza = pizza.fromJson(pizzaJson);
+                                pizzeria.addPizzaToMenu(pizza);
+                            } catch (Exception e) {
+                                System.err.println("Error parsing pizza: " + e.getMessage());
+                            }
+                        }
+                    }
+                }
             }
 
-            // Parse customers
-            String customersStr = json.split("\"customers\": \\{")[1].split("\\}")[0].trim();
-            String[] customerEntries = customersStr.split(",\\n");
-            for (String customerEntry : customerEntries) {
-                String customerId = customerEntry.split(":")[0].replaceAll("\"", "").trim();
-                String customerJson = customerEntry.split(":")[1].trim();
-                Customer customer = new Customer();
-                customer.fromJson(customerJson);
-                pizzeria.registerCustomer(customer);
+            // Extract customers section
+            int customersStartIndex = json.indexOf("\"customers\": {");
+            if (customersStartIndex != -1) {
+                int customersContentStart = json.indexOf('{', customersStartIndex) + 1;
+                int customersContentEnd = findMatchingCloseBracket(json, customersContentStart - 1);
+
+                if (customersContentEnd != -1) {
+                    String customersContent = json.substring(customersContentStart, customersContentEnd).trim();
+
+                    if (!customersContent.isEmpty()) {
+                        HashMap<String, String> customerEntries = extractJsonKeyValuePairs(customersContent);
+
+                        for (String customerId : customerEntries.keySet()) {
+                            try {
+                                String customerJson = customerEntries.get(customerId);
+                                Customer customer = new Customer();
+                                customer = customer.fromJson(customerJson);
+                                pizzeria.registerCustomer(customer);
+                            } catch (Exception e) {
+                                System.err.println("Error parsing customer: " + e.getMessage());
+                            }
+                        }
+                    }
+                }
             }
 
-            // Parse totalSoldPizzas
-            String totalSoldPizzasStr = json.split("\"totalSoldPizzas\": ")[1].split("\n")[0].trim();
-            pizzeria.totalSoldPizzas = Integer.parseInt(totalSoldPizzasStr);
-
+            // Extract totalSoldPizzas
+            int totalSoldStartIndex = json.indexOf("\"totalSoldPizzas\":");
+            if (totalSoldStartIndex != -1) {
+                int valueStart = totalSoldStartIndex + "\"totalSoldPizzas\":".length();
+                int valueEnd = json.indexOf(",", valueStart);
+                if (valueEnd == -1) {
+                    valueEnd = json.indexOf("}", valueStart);
+                }
+                if (valueEnd != -1) {
+                    String valueStr = json.substring(valueStart, valueEnd).trim();
+                    pizzeria.totalSoldPizzas = Integer.parseInt(valueStr);
+                }
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error parsing pizzeria JSON: " + e.getMessage());
         }
 
         return pizzeria;
+    }
+
+
+    // Helper method to find the matching closing bracket (either } or ])
+    private int findMatchingCloseBracket(String json, int openBracketPos) {
+        char openBracket = json.charAt(openBracketPos);
+        char closeBracket = (openBracket == '{') ? '}' : ']';
+
+        int depth = 1;
+        for (int i = openBracketPos + 1; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == openBracket) depth++;
+            else if (c == closeBracket) {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1; // No matching bracket found
+    }
+
+    // Helper method to split a JSON string into individual objects
+    private ArrayList<String> splitJsonObjects(String jsonContent) {
+        ArrayList<String> result = new ArrayList<>();
+
+        int startPos = 0;
+        int depth = 0;
+        boolean inObject = false;
+
+        for (int i = 0; i < jsonContent.length(); i++) {
+            char c = jsonContent.charAt(i);
+
+            if (c == '{') {
+                if (!inObject) {
+                    startPos = i;
+                    inObject = true;
+                }
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0 && inObject) {
+                    result.add(jsonContent.substring(startPos, i + 1));
+                    inObject = false;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // Helper method to extract key-value pairs from a JSON object
+    private HashMap<String, String> extractJsonKeyValuePairs(String jsonContent) {
+        HashMap<String, String> result = new HashMap<>();
+
+        int pos = 0;
+        while (pos < jsonContent.length()) {
+            // Find the key (enclosed in quotes)
+            int keyStart = jsonContent.indexOf("\"", pos);
+            if (keyStart == -1) break;
+
+            int keyEnd = jsonContent.indexOf("\"", keyStart + 1);
+            if (keyEnd == -1) break;
+
+            String key = jsonContent.substring(keyStart + 1, keyEnd);
+
+            // Find the value (which should be an object)
+            int colonPos = jsonContent.indexOf(":", keyEnd);
+            if (colonPos == -1) break;
+
+            int valueStart = jsonContent.indexOf("{", colonPos);
+            if (valueStart == -1) break;
+
+            int valueEnd = findMatchingCloseBracket(jsonContent, valueStart);
+            if (valueEnd == -1) break;
+
+            String value = jsonContent.substring(valueStart, valueEnd + 1);
+            result.put(key, value);
+
+            pos = valueEnd + 1;
+        }
+
+        return result;
     }
 }

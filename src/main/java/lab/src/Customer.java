@@ -3,7 +3,7 @@ package lab.src;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class Customer implements JsonSerializable {
+public class Customer implements JsonSerializable<Customer> {
     private int id;
     private String name;
     private String phone;

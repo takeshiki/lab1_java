@@ -2,8 +2,9 @@ package lab.src;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
-public class Pizza implements JsonSerializable {
+public class Pizza implements JsonSerializable<Pizza> {
     private String name;
     private boolean isCooked;
     private float price;
@@ -81,7 +82,7 @@ public class Pizza implements JsonSerializable {
     public String toJson() {
         StringBuilder json = new StringBuilder("{\n");
         json.append("  \"name\": \"").append(name).append("\",\n");
-        json.append("  \"price\": ").append(String.format("%.2f", price)).append(",\n");
+        json.append("  \"price\": ").append(String.format(Locale.US, "%.2f", price)).append(",\n");
         json.append("  \"toppings\": {\n");
 
         int count = 0;
@@ -101,43 +102,119 @@ public class Pizza implements JsonSerializable {
 
     @Override
     public Pizza fromJson(String json) {
-        String name = null;
-        float price = 0;
-        boolean isCooked = false;
-        HashMap<String, Float> toppings = new HashMap<>();
-
         try {
-            name = json.split("\"name\": \"")[1].split("\"")[0];
-            price = Float.parseFloat(json.split("\"price\": ")[1].split(",")[0]);
-            isCooked = Boolean.parseBoolean(json.split("\"isCooked\": ")[1].split("\n")[0].trim());
+            String name = extractJsonStringValue(json, "name");
 
-            if (json.contains("\"toppings\": {")) {
-                String toppingsStr = json.split("\"toppings\": \\{")[1].split("\\}")[0].trim();
+            float price = extractJsonFloatValue(json, "price");
 
-                if (!toppingsStr.isEmpty()) {
-                    String[] toppingEntries = toppingsStr.split("\\s*,\\s*|\\s*\n\\s*");
+            boolean isCooked = extractJsonBooleanValue(json, "isCooked");
 
-                    for (String entry : toppingEntries) {
-                        if (entry.trim().isEmpty()) continue;
+            HashMap<String, Float> toppings = new HashMap<>();
+            String toppingsJson = extractJsonObjectValue(json, "toppings");
 
-                        String[] parts = entry.split(":");
-                        if (parts.length >= 2) {
-                            String toppingName = parts[0].replaceAll("\"", "").trim();
-                            StringBuilder priceStr = new StringBuilder();
-                            for (int i = 1; i < parts.length; i++) {
-                                priceStr.append(parts[i]);
-                            }
-                            Float toppingPrice = Float.parseFloat(priceStr.toString().trim());
-                            toppings.put(toppingName, toppingPrice);
+            if (toppingsJson != null && !toppingsJson.isEmpty()) {
+                int pos = 0;
+                while (pos < toppingsJson.length()) {
+                    int keyStart = toppingsJson.indexOf("\"", pos);
+                    if (keyStart == -1) break;
+
+                    int keyEnd = toppingsJson.indexOf("\"", keyStart + 1);
+                    if (keyEnd == -1) break;
+
+                    String key = toppingsJson.substring(keyStart + 1, keyEnd);
+
+                    int colonPos = toppingsJson.indexOf(":", keyEnd);
+                    if (colonPos == -1) break;
+
+                    int valueEnd = toppingsJson.indexOf(",", colonPos);
+                    if (valueEnd == -1) {
+                        valueEnd = toppingsJson.indexOf("}", colonPos);
+                    }
+                    if (valueEnd == -1) break;
+
+                    String valueStr = toppingsJson.substring(colonPos + 1, valueEnd).trim();
+
+                    float value;
+                    if (valueStr.equals("true")) {
+                        value = 1.0f;
+                    } else if (valueStr.equals("false")) {
+                        continue;
+                    } else {
+                        try {
+                            value = Float.parseFloat(valueStr);
+                        } catch (NumberFormatException e) {
+                            value = 1.0f;
                         }
                     }
+
+                    toppings.put(key, value);
+                    pos = valueEnd + 1;
                 }
             }
+
+            return new Pizza(name, price, toppings, isCooked);
+
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("Error parsing Pizza JSON: " + e.getMessage(), e);
         }
+    }
 
-        return new Pizza(name, price, toppings, isCooked);
+    private String extractJsonStringValue(String json, String key) {
+        String pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]*)\"";
+        java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher m = r.matcher(json);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return "";
+    }
+
+    private float extractJsonFloatValue(String json, String key) {
+        String pattern = "\"" + key + "\"\\s*:\\s*([0-9.]+)";
+        java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher m = r.matcher(json);
+        if (m.find()) {
+            return Float.parseFloat(m.group(1));
+        }
+        return 0.0f;
+    }
+
+    private boolean extractJsonBooleanValue(String json, String key) {
+        String pattern = "\"" + key + "\"\\s*:\\s*(true|false)";
+        java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher m = r.matcher(json);
+        if (m.find()) {
+            return Boolean.parseBoolean(m.group(1));
+        }
+        return false;
+    }
+
+    private String extractJsonObjectValue(String json, String key) {
+        int keyIndex = json.indexOf("\"" + key + "\"");
+        if (keyIndex == -1) return "";
+
+        int objectStart = json.indexOf("{", keyIndex);
+        if (objectStart == -1) return "";
+
+        int objectEnd = findMatchingCloseBracket(json, objectStart);
+        if (objectEnd == -1) return "";
+
+        return json.substring(objectStart + 1, objectEnd);
+    }
+
+    private int findMatchingCloseBracket(String json, int openBracketPos) {
+        char openBracket = json.charAt(openBracketPos);
+        char closeBracket = (openBracket == '{') ? '}' : ']';
+
+        int depth = 1;
+        for (int i = openBracketPos + 1; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == openBracket) depth++;
+            else if (c == closeBracket) {
+                depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
     }
 }

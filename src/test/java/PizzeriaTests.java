@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PizzeriaTests {
 
-    private Pizza margherita;
+    private Pizza margarita;
     private Pizza pepperoni;
     private Customer customer;
     private Pizzeria pizzeria;
@@ -22,7 +22,7 @@ public class PizzeriaTests {
         HashMap<String, Float> margheritaToppings = new HashMap<>();
         margheritaToppings.put("Cheese", 2.0f);
         margheritaToppings.put("Tomato", 1.0f);
-        margherita = new Pizza("Margherita", 10.0f, margheritaToppings, false);
+        margarita = new Pizza("Margherita", 10.0f, margheritaToppings, false);
 
         HashMap<String, Float> pepperoniToppings = new HashMap<>();
         pepperoniToppings.put("Cheese", 2.0f);
@@ -36,20 +36,20 @@ public class PizzeriaTests {
 
     @Test
     public void testAddPizzaToMenu() {
-        pizzeria.addPizzaToMenu(margherita);
+        pizzeria.addPizzaToMenu(margarita);
         assertEquals(1, pizzeria.getMenu().size());
-        assertTrue(pizzeria.getMenu().contains(margherita));
+        assertTrue(pizzeria.getMenu().contains(margarita));
     }
 
     @Test
     public void testRemovePizzaFromMenu() {
-        pizzeria.addPizzaToMenu(margherita);
+        pizzeria.addPizzaToMenu(margarita);
         pizzeria.addPizzaToMenu(pepperoni);
         assertEquals(2, pizzeria.getMenu().size());
 
-        pizzeria.removePizzaFromMenu(margherita);
+        pizzeria.removePizzaFromMenu(margarita);
         assertEquals(1, pizzeria.getMenu().size());
-        assertFalse(pizzeria.getMenu().contains(margherita));
+        assertFalse(pizzeria.getMenu().contains(margarita));
         assertTrue(pizzeria.getMenu().contains(pepperoni));
     }
 
@@ -85,7 +85,7 @@ public class PizzeriaTests {
             }
         };
 
-        customer.addToOrder(margherita);
+        customer.addToOrder(margarita);
         customer.addToOrder(pepperoni);
         pizzeria.registerCustomer(customer);
 
@@ -108,25 +108,25 @@ public class PizzeriaTests {
 
     @Test
     public void testPizzaAddTopping() {
-        float initialPrice = margherita.getPrice();
-        margherita.AddTopping("Mushroom", 2.5f);
+        float initialPrice = margarita.getPrice();
+        margarita.AddTopping("Mushroom", 2.5f);
 
-        assertTrue(margherita.getToppings().containsKey("Mushroom"));
-        assertEquals(2.5f, margherita.getToppings().get("Mushroom"), 0.001f);
-        assertEquals(initialPrice + 2.5f, margherita.getPrice(), 0.001f);
+        assertTrue(margarita.getToppings().containsKey("Mushroom"));
+        assertEquals(2.5f, margarita.getToppings().get("Mushroom"), 0.001f);
+        assertEquals(initialPrice + 2.5f, margarita.getPrice(), 0.001f);
     }
 
     @Test
     public void testPizzaAddDuplicateTopping() {
-        float initialPrice = margherita.getPrice();
-        int initialToppingsCount = margherita.getToppings().size();
+        float initialPrice = margarita.getPrice();
+        int initialToppingsCount = margarita.getToppings().size();
 
         // Try to add cheese again
-        margherita.AddTopping("Cheese", 2.0f);
+        margarita.AddTopping("Cheese", 2.0f);
 
         // Verify topping wasn't added again and price didn't change
-        assertEquals(initialToppingsCount, margherita.getToppings().size());
-        assertEquals(initialPrice, margherita.getPrice(), 0.001f);
+        assertEquals(initialToppingsCount, margarita.getToppings().size());
+        assertEquals(initialPrice, margarita.getPrice(), 0.001f);
     }
 
     @Test
@@ -140,23 +140,23 @@ public class PizzeriaTests {
 
     @Test
     public void testPizzaToJsonAndFromJson() {
-        String json = margherita.toJson();
+        String json = margarita.toJson();
         Pizza deserializedPizza = new Pizza().fromJson(json);
 
-        assertEquals(margherita.getName(), deserializedPizza.getName());
-        assertEquals(margherita.getPrice(), deserializedPizza.getPrice(), 0.001f);
-        assertEquals(margherita.isCooked(), deserializedPizza.isCooked());
-        assertEquals(margherita.getToppings().size(), deserializedPizza.getToppings().size());
+        assertEquals(margarita.getName(), deserializedPizza.getName());
+        assertEquals(margarita.getPrice(), deserializedPizza.getPrice(), 0.001f);
+        assertEquals(margarita.isCooked(), deserializedPizza.isCooked());
+        assertEquals(margarita.getToppings().size(), deserializedPizza.getToppings().size());
 
-        for (String topping : margherita.getToppings().keySet()) {
+        for (String topping : margarita.getToppings().keySet()) {
             assertTrue(deserializedPizza.getToppings().containsKey(topping));
-            assertEquals(margherita.getToppings().get(topping), deserializedPizza.getToppings().get(topping), 0.001f);
+            assertEquals(margarita.getToppings().get(topping), deserializedPizza.getToppings().get(topping), 0.001f);
         }
     }
 
     @Test
     public void testPizzeriaToJsonAndFromJson() {
-        pizzeria.addPizzaToMenu(margherita);
+        pizzeria.addPizzaToMenu(margarita);
         pizzeria.registerCustomer(customer);
 
         String json = pizzeria.toJson();
@@ -182,7 +182,7 @@ public class PizzeriaTests {
             }
         };
 
-        customer.addToOrder(margherita);
+        customer.addToOrder(margarita);
 
         String json = customer.toJson();
         Customer deserializedCustomer = new Customer().fromJson(json);

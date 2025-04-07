@@ -1,6 +1,6 @@
 package lab.src;
 
-public interface JsonSerializable {
+public interface JsonSerializable<T> {
     String toJson();
-    JsonSerializable fromJson(String json);
+    T fromJson(String json);
 }

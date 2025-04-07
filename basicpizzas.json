@@ -1,0 +1,101 @@
+{
+  "menu": [
+    {
+      "name": "Margherita",
+      "price": 100,
+      "toppings": {
+        "cheese": 20,
+        "tomato": 10
+      }
+    },
+    {
+      "name": "Pepperoni",
+      "price": 120,
+      "toppings": {
+        "cheese": 20,
+        "pepperoni": 30
+      }
+    },
+    {
+      "name": "Vegetarian",
+      "price": 110,
+      "toppings": {
+        "cheese": 20,
+        "mushrooms": 15,
+        "peppers": 12,
+        "onions": 10
+      }
+    },
+    {
+      "name": "BBQ Chicken",
+      "price": 130,
+      "toppings": {
+        "cheese": 20,
+        "bbq_sauce": 10,
+        "chicken": 25,
+        "onions": 10
+      }
+    },
+    {
+      "name": "Hawaiian",
+      "price": 115,
+      "toppings": {
+        "cheese": 20,
+        "ham": 20,
+        "pineapple": 15
+      }
+    },
+    {
+      "name": "Four Cheese",
+      "price": 140,
+      "toppings": {
+        "mozzarella": 25,
+        "cheddar": 20,
+        "parmesan": 15,
+        "gorgonzola": 30
+      }
+    },
+    {
+      "name": "Meat Lovers",
+      "price": 150,
+      "toppings": {
+        "cheese": 20,
+        "pepperoni": 30,
+        "sausage": 25,
+        "bacon": 25,
+        "ham": 25
+      }
+    },
+    {
+      "name": "Seafood",
+      "price": 160,
+      "toppings": {
+        "cheese": 20,
+        "shrimp": 30,
+        "mussels": 25,
+        "garlic": 10
+      }
+    },
+    {
+      "name": "Spicy Mexican",
+      "price": 125,
+      "toppings": {
+        "cheese": 20,
+        "jalapenos": 15,
+        "ground_beef": 25,
+        "onions": 10,
+        "avocado": 20
+      }
+    },
+    {
+      "name": "Pesto Chicken",
+      "price": 135,
+      "toppings": {
+        "cheese": 20,
+        "pesto_sauce": 10,
+        "chicken": 25,
+        "sun_dried_tomatoes": 15
+      }
+    }
+  ]
+}
