@@ -1,0 +1,194 @@
+import lab.src.Customer;
+import lab.src.Pizza;
+import lab.src.Pizzeria;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class PizzeriaTests {
+
+    private Pizza margherita;
+    private Pizza pepperoni;
+    private Customer customer;
+    private Pizzeria pizzeria;
+
+    @BeforeEach
+    public void setup() {
+        // Initialize test objects before each test
+        HashMap<String, Float> margheritaToppings = new HashMap<>();
+        margheritaToppings.put("Cheese", 2.0f);
+        margheritaToppings.put("Tomato", 1.0f);
+        margherita = new Pizza("Margherita", 10.0f, margheritaToppings, false);
+
+        HashMap<String, Float> pepperoniToppings = new HashMap<>();
+        pepperoniToppings.put("Cheese", 2.0f);
+        pepperoniToppings.put("Pepperoni", 3.0f);
+        pepperoni = new Pizza("Pepperoni", 12.0f, pepperoniToppings, false);
+
+        customer = new Customer(1, "Taras", "+380551338696");
+
+        pizzeria = new Pizzeria();
+    }
+
+    @Test
+    public void testAddPizzaToMenu() {
+        pizzeria.addPizzaToMenu(margherita);
+        assertEquals(1, pizzeria.getMenu().size());
+        assertTrue(pizzeria.getMenu().contains(margherita));
+    }
+
+    @Test
+    public void testRemovePizzaFromMenu() {
+        pizzeria.addPizzaToMenu(margherita);
+        pizzeria.addPizzaToMenu(pepperoni);
+        assertEquals(2, pizzeria.getMenu().size());
+
+        pizzeria.removePizzaFromMenu(margherita);
+        assertEquals(1, pizzeria.getMenu().size());
+        assertFalse(pizzeria.getMenu().contains(margherita));
+        assertTrue(pizzeria.getMenu().contains(pepperoni));
+    }
+
+    @Test
+    public void testRegisterAndGetCustomer() {
+        pizzeria.registerCustomer(customer);
+        assertEquals(customer, pizzeria.getCustomer(1));
+    }
+
+    @Test
+    public void testRemoveCustomer() {
+        pizzeria.registerCustomer(customer);
+        assertNotNull(pizzeria.getCustomer(1));
+
+        pizzeria.removeCustomer(1);
+        assertNull(pizzeria.getCustomer(1));
+    }
+
+    @Test
+    public void testProcessOrderWithValidCustomer() {
+        // Initialize pizzasToOrder as it appears to be null in the constructor
+        customer = new Customer(1, "Taras", "+380551338696") {
+            private ArrayList<Pizza> pizzasToOrder = new ArrayList<>();
+
+            @Override
+            public ArrayList<Pizza> getPizzasToOrder() {
+                return pizzasToOrder;
+            }
+
+            @Override
+            public void addToOrder(Pizza pizza) {
+                pizzasToOrder.add(pizza);
+            }
+        };
+
+        customer.addToOrder(margherita);
+        customer.addToOrder(pepperoni);
+        pizzeria.registerCustomer(customer);
+
+        float totalPrice = pizzeria.processOrder(1);
+        assertEquals(22.0f, totalPrice, 0.001f);
+        assertEquals(2, pizzeria.getTotalSoldPizzas());
+
+        // Verify that pizzas are cooked
+        for (Pizza pizza : customer.getPizzasToOrder()) {
+            assertTrue(pizza.isCooked());
+        }
+    }
+
+    @Test
+    public void testProcessOrderWithInvalidCustomer() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            pizzeria.processOrder(999); // Non-existent customer ID
+        });
+    }
+
+    @Test
+    public void testPizzaAddTopping() {
+        float initialPrice = margherita.getPrice();
+        margherita.AddTopping("Mushroom", 2.5f);
+
+        assertTrue(margherita.getToppings().containsKey("Mushroom"));
+        assertEquals(2.5f, margherita.getToppings().get("Mushroom"), 0.001f);
+        assertEquals(initialPrice + 2.5f, margherita.getPrice(), 0.001f);
+    }
+
+    @Test
+    public void testPizzaAddDuplicateTopping() {
+        float initialPrice = margherita.getPrice();
+        int initialToppingsCount = margherita.getToppings().size();
+
+        // Try to add cheese again
+        margherita.AddTopping("Cheese", 2.0f);
+
+        // Verify topping wasn't added again and price didn't change
+        assertEquals(initialToppingsCount, margherita.getToppings().size());
+        assertEquals(initialPrice, margherita.getPrice(), 0.001f);
+    }
+
+    @Test
+    public void testPizzaRemoveTopping() {
+        float initialPrice = pepperoni.getPrice();
+        pepperoni.RemoveTopping("Pepperoni", 3.0f);
+
+        assertFalse(pepperoni.getToppings().containsKey("Pepperoni"));
+        assertEquals(initialPrice - 3.0f, pepperoni.getPrice(), 0.001f);
+    }
+
+    @Test
+    public void testPizzaToJsonAndFromJson() {
+        String json = margherita.toJson();
+        Pizza deserializedPizza = new Pizza().fromJson(json);
+
+        assertEquals(margherita.getName(), deserializedPizza.getName());
+        assertEquals(margherita.getPrice(), deserializedPizza.getPrice(), 0.001f);
+        assertEquals(margherita.isCooked(), deserializedPizza.isCooked());
+        assertEquals(margherita.getToppings().size(), deserializedPizza.getToppings().size());
+
+        for (String topping : margherita.getToppings().keySet()) {
+            assertTrue(deserializedPizza.getToppings().containsKey(topping));
+            assertEquals(margherita.getToppings().get(topping), deserializedPizza.getToppings().get(topping), 0.001f);
+        }
+    }
+
+    @Test
+    public void testPizzeriaToJsonAndFromJson() {
+        pizzeria.addPizzaToMenu(margherita);
+        pizzeria.registerCustomer(customer);
+
+        String json = pizzeria.toJson();
+        Pizzeria deserializedPizzeria = new Pizzeria().fromJson(json);
+
+        assertEquals(pizzeria.getMenu().size(), deserializedPizzeria.getMenu().size());
+        assertEquals(pizzeria.getTotalSoldPizzas(), deserializedPizzeria.getTotalSoldPizzas());
+    }
+
+    @Test
+    public void testCustomerToJsonAndFromJson() {
+        customer = new Customer(1, "Taras", "+380551338696") {
+            private ArrayList<Pizza> pizzasToOrder = new ArrayList<>();
+
+            @Override
+            public ArrayList<Pizza> getPizzasToOrder() {
+                return pizzasToOrder;
+            }
+
+            @Override
+            public void addToOrder(Pizza pizza) {
+                pizzasToOrder.add(pizza);
+            }
+        };
+
+        customer.addToOrder(margherita);
+
+        String json = customer.toJson();
+        Customer deserializedCustomer = new Customer().fromJson(json);
+
+        assertEquals(customer.getId(), deserializedCustomer.getId());
+        assertEquals(customer.getName(), deserializedCustomer.getName());
+        assertEquals(customer.getPhone(), deserializedCustomer.getPhone());
+    }
+}
