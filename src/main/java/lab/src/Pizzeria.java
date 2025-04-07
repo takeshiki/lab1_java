@@ -1,6 +1,7 @@
 package lab.src;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 public class Pizzeria implements JsonSerializable<Pizzeria> {
@@ -103,12 +104,19 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
         return result;
     }
 
+    public void sortMenuByPrice() {
+        this.menu.sort(Comparator.comparing(Pizza::getPrice));
+    }
+
+    public void sortMenuByName() {
+        this.menu.sort(Comparator.comparing(Pizza::getName, String.CASE_INSENSITIVE_ORDER));
+    }
+
     @Override
     public String toJson() {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
 
-        // Menu
         json.append("\"menu\": [\n");
         for (int i = 0; i < menu.size(); i++) {
             json.append(menu.get(i).toJson());
@@ -116,17 +124,15 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
         }
         json.append("\n],\n");
 
-        // Customers
         json.append("\"customers\": {\n");
         for (Integer id : customers.keySet()) {
             json.append("\"" + id + "\": " + customers.get(id).toJson() + ",\n");
         }
         if (!customers.isEmpty()) {
-            json.setLength(json.length() - 2); // Remove trailing comma
+            json.setLength(json.length() - 2);
         }
         json.append("\n},\n");
 
-        // Total sold pizzas
         json.append("\"totalSoldPizzas\": " + totalSoldPizzas + "\n");
 
         json.append("}");
@@ -139,7 +145,6 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
         Pizzeria pizzeria = new Pizzeria();
 
         try {
-            // Extract menu section
             int menuStartIndex = json.indexOf("\"menu\": [");
             if (menuStartIndex != -1) {
                 int menuContentStart = json.indexOf('[', menuStartIndex) + 1;
@@ -148,7 +153,6 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
                 if (menuContentEnd != -1) {
                     String menuContent = json.substring(menuContentStart, menuContentEnd).trim();
 
-                    // Process each pizza in the menu
                     if (!menuContent.isEmpty()) {
                         ArrayList<String> pizzaJsons = splitJsonObjects(menuContent);
 
@@ -165,7 +169,6 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
                 }
             }
 
-            // Extract customers section
             int customersStartIndex = json.indexOf("\"customers\": {");
             if (customersStartIndex != -1) {
                 int customersContentStart = json.indexOf('{', customersStartIndex) + 1;
@@ -191,7 +194,6 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
                 }
             }
 
-            // Extract totalSoldPizzas
             int totalSoldStartIndex = json.indexOf("\"totalSoldPizzas\":");
             if (totalSoldStartIndex != -1) {
                 int valueStart = totalSoldStartIndex + "\"totalSoldPizzas\":".length();
@@ -212,7 +214,6 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
     }
 
 
-    // Helper method to find the matching closing bracket (either } or ])
     private int findMatchingCloseBracket(String json, int openBracketPos) {
         char openBracket = json.charAt(openBracketPos);
         char closeBracket = (openBracket == '{') ? '}' : ']';
@@ -226,10 +227,9 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
                 if (depth == 0) return i;
             }
         }
-        return -1; // No matching bracket found
+        return -1;
     }
 
-    // Helper method to split a JSON string into individual objects
     private ArrayList<String> splitJsonObjects(String jsonContent) {
         ArrayList<String> result = new ArrayList<>();
 
@@ -258,14 +258,12 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
         return result;
     }
 
-    // Helper method to extract key-value pairs from a JSON object
     private HashMap<String, String> extractJsonKeyValuePairs(String jsonContent) {
         HashMap<String, String> result = new HashMap<>();
 
         int pos = 0;
         while (pos < jsonContent.length()) {
-            // Find the key (enclosed in quotes)
-            int keyStart = jsonContent.indexOf("\"", pos);
+             int keyStart = jsonContent.indexOf("\"", pos);
             if (keyStart == -1) break;
 
             int keyEnd = jsonContent.indexOf("\"", keyStart + 1);
@@ -273,7 +271,6 @@ public class Pizzeria implements JsonSerializable<Pizzeria> {
 
             String key = jsonContent.substring(keyStart + 1, keyEnd);
 
-            // Find the value (which should be an object)
             int colonPos = jsonContent.indexOf(":", keyEnd);
             if (colonPos == -1) break;
 

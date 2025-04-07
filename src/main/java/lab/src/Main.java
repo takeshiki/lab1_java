@@ -119,7 +119,38 @@ public class Main {
                 case 6 -> {
                     System.out.print("Введіть назву файлу для експорту (наприклад, pizzeria.json): ");
                     String exportFile = scanner.nextLine();
-                    saveToFile(exportFile, pizzeria.toJson());
+
+                    System.out.print("Сортувати меню перед експортом? (y/n): ");
+                    String sortChoice = scanner.nextLine();
+                    if (sortChoice.equalsIgnoreCase("y")) {
+                        System.out.println("Сортувати за:");
+                        System.out.println("1. Назвою");
+                        System.out.println("2. Ціною");
+                        System.out.print("Ваш вибір: ");
+                        int sortType = -1;
+                        try {
+                            sortType = scanner.nextInt();
+                        } catch (java.util.InputMismatchException e) {
+                            System.out.println("Невірний вибір сортування. Експорт без сортування.");
+                            scanner.next();
+
+                            scanner.next();
+
+                        }
+                        scanner.nextLine();
+
+                        if (sortType == 1) {
+                            pizzeria.sortMenuByName();
+                            System.out.println("Меню відсортовано за назвою.");
+                        } else if (sortType == 2) {
+                            pizzeria.sortMenuByPrice();
+                            System.out.println("Меню відсортовано за ціною.");
+                        } else {
+                            System.out.println("Невірний вибір критерію. Експорт без сортування.");
+                        }
+                    }
+                    String json = pizzeria.toJson();
+                    saveToFile(exportFile, json);
                 }
                 case 7 -> {
                     System.out.print("Введіть назву файлу для імпорту (наприклад, pizzeria.json): ");

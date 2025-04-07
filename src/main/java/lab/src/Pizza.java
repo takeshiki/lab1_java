@@ -88,7 +88,7 @@ public class Pizza implements JsonSerializable<Pizza> {
         int count = 0;
         for (Map.Entry<String, Float> entry : toppings.entrySet()) {
             json.append("    \"").append(entry.getKey()).append("\": ")
-                    .append(String.format("%.2f", entry.getValue()));
+                    .append(String.format(Locale.US, "%.2f", entry.getValue()));
             count++;
             if (count < toppings.size()) json.append(",");
             json.append("\n");
